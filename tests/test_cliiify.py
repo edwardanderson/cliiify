@@ -4,10 +4,12 @@ from cliiify.manifest import load_manifest
 from cliiify.viewport import MAX_ZOOM, Viewport
 
 
+# Manifest structure adapted from the IIIF Cookbook "Simplest Image" recipe
+# (https://iiif.io/api/cookbook/recipe/0001-mvm-image/), simplified.
 V3_MANIFEST = {
     "@context": "http://iiif.io/api/presentation/3/context.json",
     "type": "Manifest",
-    "label": {"en": ["Simplest Image Example"]},
+    "label": {"en": ["Test Manifest"]},
     "items": [
         {
             "type": "Canvas",
