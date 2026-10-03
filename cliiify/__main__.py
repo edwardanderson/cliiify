@@ -13,8 +13,10 @@ def main() -> None:
         title, canvases = load_manifest(args.manifest)
     except Exception as exc:
         sys.exit(f'cliiify: cannot load manifest: {exc}')
+
     if not canvases:
         sys.exit('cliiify: no image canvases found in manifest')
+
     run(title, canvases)
 
 
