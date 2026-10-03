@@ -1,17 +1,43 @@
-from pathlib import Path
+import json
 
 from cliiify.manifest import load_manifest
 from cliiify.viewport import MAX_ZOOM, Viewport
 
 
-SAMPLE = Path(__file__).parent.parent / 'manifest' / '0001-mvm-image.json'
+V3_MANIFEST = {
+    "@context": "http://iiif.io/api/presentation/3/context.json",
+    "type": "Manifest",
+    "label": {"en": ["Simplest Image Example"]},
+    "items": [
+        {
+            "type": "Canvas",
+            "items": [
+                {
+                    "type": "AnnotationPage",
+                    "items": [
+                        {
+                            "type": "Annotation",
+                            "motivation": "painting",
+                            "body": {
+                                "id": "https://example.org/page1-full.png",
+                                "type": "Image",
+                            },
+                        }
+                    ],
+                }
+            ],
+        }
+    ],
+}
 
 
-def test_manifest():
-    title, canvases = load_manifest(str(SAMPLE))
-    assert title.startswith('Simplest Image')
+def test_manifest(tmp_path):
+    path = tmp_path / "manifest.json"
+    path.write_text(json.dumps(V3_MANIFEST))
+    title, canvases = load_manifest(str(path))
+    assert title.startswith("Simplest Image")
     assert len(canvases) == 1
-    assert canvases[0].image_url.endswith('page1-full.png')
+    assert canvases[0].image_url.endswith("page1-full.png")
 
 
 def test_full_view_at_zoom_1():
