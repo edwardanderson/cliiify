@@ -1,0 +1,21 @@
+[project]
+name = "cliiify"
+version = "1.0.0"
+description = "View IIIF manifests in the terminal"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "chafa-py>=1.2.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
+
+[project.scripts]
+cliiify = "cliiify.__main__:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
