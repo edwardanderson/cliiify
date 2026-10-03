@@ -205,3 +205,83 @@ def test_v2_native_size_is_read():
     )
     assert (canvases[0].width, canvases[0].height) == (4317, 2855)
     assert canvases[0].can_fetch_regions
+
+
+def _canvas():
+    from cliiify.manifest import Canvas
+
+    return Canvas('c', 'http://h/body.jpg', 'http://h/img')
+
+
+def test_info_v2_level2_fills_size_and_caps_width():
+    canvas = _canvas()
+    canvas.apply_info(
+        {
+            '@context': 'http://iiif.io/api/image/2/context.json',
+            'width': 4317,
+            'height': 2855,
+            'profile': [
+                'http://iiif.io/api/image/2/level2.json',
+                {'maxWidth': 4000, 'supports': ['sizeByWh']},
+            ],
+        }
+    )
+    assert (canvas.width, canvas.height) == (4317, 2855)
+    assert canvas.can_fetch_regions
+    assert canvas.url_for(9000) == 'http://h/img/full/4000,/0/default.jpg'
+    url = canvas.region_url((0.0, 0.0, 1.0, 1.0), 9000)
+    assert url == 'http://h/img/0,0,4317,2855/4000,/0/default.jpg'
+
+
+def test_info_never_upscales():
+    canvas = _canvas()
+    canvas.apply_info({'width': 500, 'height': 300, 'profile': 'level1'})
+    assert canvas.url_for(1600) == 'http://h/img/full/500,/0/default.jpg'
+
+
+def test_info_level0_uses_listed_sizes_and_no_regions():
+    canvas = _canvas()
+    canvas.apply_info(
+        {
+            '@context': 'http://iiif.io/api/image/2/context.json',
+            'width': 4000,
+            'height': 2000,
+            'profile': 'http://iiif.io/api/image/2/level0.json',
+            'sizes': [
+                {'width': 2000, 'height': 1000},
+                {'width': 500, 'height': 250},
+                {'width': 1000, 'height': 500},
+            ],
+        }
+    )
+    assert not canvas.can_fetch_regions
+    assert canvas.url_for(800) == 'http://h/img/full/1000,/0/default.jpg'
+    assert canvas.url_for(5000) == 'http://h/img/full/2000,/0/default.jpg'
+
+
+def test_info_v3_level0_uses_w_h_sizes_and_max():
+    canvas = _canvas()
+    info = {
+        '@context': 'http://iiif.io/api/image/3/context.json',
+        'width': 4000,
+        'height': 2000,
+        'profile': 'level0',
+        'sizes': [{'width': 1000, 'height': 500}],
+    }
+    canvas.apply_info(info)
+    assert canvas.url_for(800) == 'http://h/img/full/1000,500/0/default.jpg'
+    canvas.apply_info({**info, 'sizes': []})
+    assert canvas.url_for(800) == 'http://h/img/full/max/0/default.jpg'
+
+
+def test_info_failure_keeps_manifest_data(monkeypatch):
+    import cliiify.manifest as manifest
+
+    def boom(service):
+        raise OSError('offline')
+
+    monkeypatch.setattr(manifest, 'fetch_info', boom)
+    canvas = manifest.Canvas('c', 'u', 'http://h/img', 100, 50)
+    canvas.load_info()
+    assert canvas.can_fetch_regions
+    assert canvas.url_for(80) == 'http://h/img/full/80,/0/default.jpg'

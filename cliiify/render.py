@@ -25,6 +25,7 @@ def fetch_image(url: str) -> Loader:
 
 def fetch_canvas_image(canvas: Canvas, width: int) -> Loader:
     """Fetch a canvas image scaled to width, falling back to the original URL."""
+    canvas.load_info()
     url = canvas.url_for(width)
     try:
         return fetch_image(url)
