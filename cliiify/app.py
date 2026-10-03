@@ -204,7 +204,10 @@ class Viewer:
         canvas = self.canvases[self.index]
         prefix = f'[{self.index + 1}/{len(self.canvases)}] {canvas.label}'
         out = ['\x1b[?2026h']
-        self.resized = False
+        if self.resized:
+            # The old contents may be the wrong shape after a resize.
+            out.append('\x1b[2J')
+            self.resized = False
         if not fut.done():
             status = f'{prefix} · loading…'
         elif fut.exception():
@@ -220,13 +223,21 @@ class Viewer:
                 region=region,
                 aspect=base.width / base.height,
             )
+            # Overwrite rows in place rather than clearing the screen first, so a
+            # terminal without synchronized updates never shows a blank frame.
+            image_rows = {top + i: line for i, line in enumerate(lines)}
             body = ''.join(
-                f'\x1b[{top + i + 1};{left + 1}H{line}\x1b[0m'
-                for i, line in enumerate(lines)
+                f'\x1b[{r + 1};1H\x1b[0m'
+                + (
+                    f'{" " * left}{image_rows[r]}\x1b[0m\x1b[K'
+                    if r in image_rows
+                    else '\x1b[2K'
+                )
+                for r in range(rows - 1)
             )
             v = self.view
             status = f'{prefix} · {v.zoom * 100:.0f}% · {v.cx:.2f},{v.cy:.2f}'
-            out.append(f'\x1b[2J{body}')
+            out.append(body)
             if not self.shown_ready:
                 self.shown_ready = True
                 self.prefetch()
