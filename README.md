@@ -2,6 +2,9 @@
 
 View IIIF v2 and v3 manifests in the terminal.
 
+Images only: it shows one painted image per canvas. Audio/video, collections,
+annotations, ranges and metadata are not displayed.
+
 ## Install
 
 ```bash

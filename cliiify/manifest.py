@@ -8,10 +8,45 @@ from pathlib import Path
 class Canvas:
     label: str
     image_url: str
+    # Base URL of a IIIF Image API service for the image, if the manifest has one.
+    service: str | None = None
+    # Pixel size of the full image, needed to request regions.
+    width: int | None = None
+    height: int | None = None
+
+    @property
+    def can_fetch_regions(self) -> bool:
+        return bool(self.service and self.width and self.height)
+
+    def region_url(
+        self, region: tuple[float, float, float, float], width: int
+    ) -> str:
+        """URL of a region (fractions of the full image) scaled to the given width."""
+        assert self.service and self.width and self.height
+        x0, y0, x1, y1 = region
+        x, y = round(x0 * self.width), round(y0 * self.height)
+        w, h = round((x1 - x0) * self.width), round((y1 - y0) * self.height)
+        return f"{self.service.rstrip('/')}/{x},{y},{w},{h}/{width},/0/default.jpg"
+
+    def url_for(self, width: int) -> str:
+        """URL of the image scaled to the given width, when a service allows it."""
+        if self.service:
+            return f"{self.service.rstrip('/')}/full/{width},/0/default.jpg"
+        return self.image_url
 
 
-# Width requested from IIIF Image API services (level 1 supports 'w,' sizes).
-IMAGE_WIDTH = 2000
+def _image_service(body: dict) -> str | None:
+    services = body.get('service') or body.get('@service') or []
+    if isinstance(services, dict):
+        services = [services]
+    for service in services:
+        if not isinstance(service, dict):
+            continue
+        kind = str(service.get('type') or service.get('@type') or '')
+        url = service.get('id') or service.get('@id')
+        if url and (not kind or kind.startswith('ImageService')):
+            return url
+    return None
 
 
 def _label(value, default: str) -> str:
@@ -35,16 +70,13 @@ def _parse_v2(data: dict) -> tuple[str, list[Canvas]]:
             label = _label(canvas.get('label'), f'Canvas {i}')
             for anno in canvas.get('images', []):
                 res = anno.get('resource', {})
-                service = res.get('service')
-                if isinstance(service, list) and service:
-                    service = service[0]
-                if isinstance(service, dict) and '@id' in service:
-                    url = f"{service['@id'].rstrip('/')}/full/{IMAGE_WIDTH},/0/default.jpg"
-                elif '@id' in res:
-                    url = res['@id']
-                else:
+                service = _image_service(res)
+                url = res.get('@id') or service
+                if not url:
                     continue
-                canvases.append(Canvas(label, url))
+                canvases.append(
+                    Canvas(label, url, service, res.get('width'), res.get('height'))
+                )
                 break
     return _label(data.get('label'), 'Untitled'), canvases
 
@@ -64,7 +96,15 @@ def parse_manifest(data: dict) -> tuple[str, list[Canvas]]:
                     and isinstance(body, dict)
                     and body.get('type') == 'Image'
                 ):
-                    canvases.append(Canvas(label, body['id']))
+                    canvases.append(
+                        Canvas(
+                            label,
+                            body['id'],
+                            _image_service(body),
+                            body.get('width'),
+                            body.get('height'),
+                        )
+                    )
                     break
             else:
                 continue

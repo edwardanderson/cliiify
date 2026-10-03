@@ -37,7 +37,7 @@ def test_manifest(tmp_path):
     path = tmp_path / "manifest.json"
     path.write_text(json.dumps(V3_MANIFEST))
     title, canvases = load_manifest(str(path))
-    assert title.startswith("Simplest Image")
+    assert title == "Test Manifest"
     assert len(canvases) == 1
     assert canvases[0].image_url.endswith("page1-full.png")
 
@@ -111,7 +111,7 @@ def test_v2_manifest():
     )
     assert title == 'T'
     assert canvases[0].label == 'fol. 1r'
-    assert canvases[0].image_url == 'http://h/img/1/full/2000,/0/default.jpg'
+    assert canvases[0].url_for(900) == 'http://h/img/1/full/900,/0/default.jpg'
 
 
 def test_letterboxed_fit_centres_and_fills_on_zoom():
@@ -124,3 +124,84 @@ def test_letterboxed_fit_centres_and_fills_on_zoom():
     x, y, w, h = v.rect(100, 100)
     assert (x, w, h) == (25, 50, 25)
     assert abs(y - 37.5) <= 1
+
+
+def test_v3_service_is_used_for_sized_urls():
+    from cliiify.manifest import parse_manifest
+
+    data = json.loads(json.dumps(V3_MANIFEST))
+    body = data['items'][0]['items'][0]['items'][0]['body']
+    body['service'] = [{'id': 'http://h/img/9', 'type': 'ImageService3'}]
+    _, canvases = parse_manifest(data)
+    assert canvases[0].url_for(800) == 'http://h/img/9/full/800,/0/default.jpg'
+    assert canvases[0].image_url == 'https://example.org/page1-full.png'
+
+
+def test_no_service_falls_back_to_body_id():
+    from cliiify.manifest import parse_manifest
+
+    _, canvases = parse_manifest(V3_MANIFEST)
+    assert canvases[0].url_for(800) == 'https://example.org/page1-full.png'
+
+
+def test_rect_within_a_region_image():
+    v = Viewport()
+    v.zoom_by(4)  # visible window: 25% of the image, centred
+    # An image covering the middle half of the page, 200px wide.
+    x, y, w, h = v.rect(200, 200, (0.25, 0.25, 0.75, 0.75))
+    assert (w, h) == (100, 100)
+    assert (x, y) == (50, 50)
+
+
+def test_frac_rect_matches_rect():
+    v = Viewport()
+    v.zoom_by(2)
+    v.pan(-100, 100)
+    x0, y0, x1, y1 = v.frac_rect()
+    assert (x0, y0, x1, y1) == (0.0, 0.5, 0.5, 1.0)
+    assert v.rect(100, 100) == (0, 50, 50, 50)
+
+
+def test_region_url_uses_native_pixels():
+    from cliiify.manifest import Canvas
+
+    canvas = Canvas('c', 'http://h/img', 'http://h/img/', 4000, 2000)
+    url = canvas.region_url((0.25, 0.5, 0.75, 1.0), 800)
+    assert url == 'http://h/img/1000,1000,2000,1000/800,/0/default.jpg'
+
+
+def test_region_fetching_needs_service_and_size():
+    from cliiify.manifest import Canvas
+
+    assert not Canvas('c', 'u').can_fetch_regions
+    assert not Canvas('c', 'u', 'http://h/img').can_fetch_regions
+    assert Canvas('c', 'u', 'http://h/img', 10, 10).can_fetch_regions
+
+
+def test_v2_native_size_is_read():
+    from cliiify.manifest import parse_manifest
+
+    _, canvases = parse_manifest(
+        {
+            'sequences': [
+                {
+                    'canvases': [
+                        {
+                            'images': [
+                                {
+                                    'resource': {
+                                        '@id': 'x',
+                                        'width': 4317,
+                                        'height': 2855,
+                                        'service': {'@id': 'http://h/img/1'},
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    )
+    assert (canvases[0].width, canvases[0].height) == (4317, 2855)
+    assert canvases[0].can_fetch_regions
