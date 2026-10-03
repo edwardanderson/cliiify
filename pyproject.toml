@@ -1,12 +1,11 @@
 [project]
-name = "cliiif"
-version = "0.1.0"
-description = "Add your description here"
+name = "cliiify"
+version = "1.0.0"
+description = "View IIIF manifests in the terminal"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "chafa-py>=1.2.0",
-    "textual>=8.2.8",
 ]
 
 [dependency-groups]
@@ -15,7 +14,7 @@ dev = [
 ]
 
 [project.scripts]
-cliiif = "cliiif.__main__:main"
+cliiify = "cliiify.__main__:main"
 
 [build-system]
 requires = ["hatchling"]

@@ -1,16 +1,17 @@
 from pathlib import Path
 
-from cliiif.manifest import load_manifest
-from cliiif.viewport import MAX_ZOOM, Viewport
+from cliiify.manifest import load_manifest
+from cliiify.viewport import MAX_ZOOM, Viewport
 
-SAMPLE = Path(__file__).parent.parent / "manifest" / "0001-mvm-image.json"
+
+SAMPLE = Path(__file__).parent.parent / 'manifest' / '0001-mvm-image.json'
 
 
 def test_manifest():
     title, canvases = load_manifest(str(SAMPLE))
-    assert title.startswith("Simplest Image")
+    assert title.startswith('Simplest Image')
     assert len(canvases) == 1
-    assert canvases[0].image_url.endswith("page1-full.png")
+    assert canvases[0].image_url.endswith('page1-full.png')
 
 
 def test_full_view_at_zoom_1():
@@ -61,18 +62,18 @@ def test_reset():
 
 
 def test_v2_manifest():
-    from cliiif.manifest import parse_manifest
+    from cliiify.manifest import parse_manifest
 
     title, canvases = parse_manifest(
         {
-            "label": "T",
-            "sequences": [
+            'label': 'T',
+            'sequences': [
                 {
-                    "canvases": [
+                    'canvases': [
                         {
-                            "label": "fol. 1r",
-                            "images": [
-                                {"resource": {"@id": "x", "service": {"@id": "http://h/img/1"}}}
+                            'label': 'fol. 1r',
+                            'images': [
+                                {'resource': {'@id': 'x', 'service': {'@id': 'http://h/img/1'}}}
                             ],
                         }
                     ]
@@ -80,6 +81,18 @@ def test_v2_manifest():
             ],
         }
     )
-    assert title == "T"
-    assert canvases[0].label == "fol. 1r"
-    assert canvases[0].image_url == "http://h/img/1/full/2000,/0/default.jpg"
+    assert title == 'T'
+    assert canvases[0].label == 'fol. 1r'
+    assert canvases[0].image_url == 'http://h/img/1/full/2000,/0/default.jpg'
+
+
+def test_letterboxed_fit_centres_and_fills_on_zoom():
+    v = Viewport()
+    v.set_fit(2.0, 1.0)  # window twice as wide as the image
+    assert v.rect(100, 100) == (0, 0, 100, 100)
+    v.pan(5, 0)
+    assert v.cx == 0.5
+    v.zoom_by(4)  # window is now 50% x 25% of the image
+    x, y, w, h = v.rect(100, 100)
+    assert (x, w, h) == (25, 50, 25)
+    assert abs(y - 37.5) <= 1
