@@ -1,11 +1,11 @@
 # cliiify
 
-View IIIF manifests in the terminal.
+View IIIF v2 and v3 manifests in the terminal.
 
 ## Install
 
 ```bash
-git clone git@github.com:edwardanderson/cliiify.git
+git clone https://github.com/edwardanderson/cliiify.git
 uv tool install --editable cliiify/
 ```
 
@@ -27,6 +27,10 @@ cliiify https://iiif.bodleian.ox.ac.uk/iiif/manifest/fd4b8844-8100-4794-a0bb-fb3
 | Next       | `n` or `PgDn`     |
 | Previous   | `p` or `PgUp`     |
 | Quit       | `q` or `Ctrl + c` |
+
+## Dependencies
+
+- [chafa.py](https://github.com/GuardKenzie/chafa.py)
 
 ## Test
 
