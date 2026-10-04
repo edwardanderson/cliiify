@@ -1,12 +1,17 @@
 import json
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
 from .net import urlopen
 
 
+# Width requested from IIIF Image API services (level 1 supports 'w,' sizes).
+IMAGE_WIDTH = 2000
+
+
 def fetch_info(service: str) -> dict:
-    with urllib.request.urlopen(f"{service.rstrip('/')}/info.json", timeout=30) as resp:
+    with urlopen(f"{service.rstrip('/')}/info.json", timeout=30) as resp:
         return json.load(resp)
 
 

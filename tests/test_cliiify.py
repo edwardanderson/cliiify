@@ -112,7 +112,8 @@ def test_v2_manifest():
     )
     assert title == 'T'
     assert canvases[0].label == 'fol. 1r'
-    assert canvases[0].url_for(900) == 'http://h/img/1/full/900,/0/default.jpg'
+    assert canvases[0].image_url == 'http://h/img/1/full/2000,/0/default.jpg'
+    assert canvases[0].service == 'http://h/img/1'
 
 
 def test_image_service_base_url():
