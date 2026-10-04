@@ -14,7 +14,6 @@ from chafa.loader import Loader
 
 from .manifest import Canvas
 from .image import (
-    REFETCH_MARGIN,
     Rect,
     base_size,
     detail_request,
@@ -309,7 +308,6 @@ class Viewer:
                 if ready:
                     # Read everything queued so held keys cost one render.
                     self.handle(os.read(fd, 4096))
-                self.poll_detail()
         finally:
             termios.tcsetattr(fd, termios.TCSADRAIN, saved)
             sys.stdout.write(LEAVE_ALT)
