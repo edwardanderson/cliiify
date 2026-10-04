@@ -2,7 +2,7 @@
 
 View IIIF manifests and images in the terminal.
 
-![The Night Watch (1642)](demo.mp4)
+![The Night Watch (1642)](demo.gif)
 
 Image: Rembrandt, H. van Rijn. (1642). _The Night Watch_ [Oil on canvas]. Rijksmuseum Amsterdam, Netherlands. <https://www.rijksmuseum.nl/nl/collectie/object/De-Nachtwacht>.
 
