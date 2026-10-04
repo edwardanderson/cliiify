@@ -2,7 +2,8 @@ from dataclasses import dataclass
 
 
 MIN_ZOOM = 1.0
-MAX_ZOOM = 32.0
+# Absolute ceiling; the usable maximum is lower, see limit_to.
+MAX_ZOOM = 256.0
 ZOOM_STEP = 1.25
 PAN_STEP = 0.1
 
@@ -17,10 +18,20 @@ class Viewport:
     # Size of the whole-image view as a fraction of the image (>1 means letterboxed).
     fx: float = 1.0
     fy: float = 1.0
+    max_zoom: float = MAX_ZOOM
 
     def set_fit(self, fx: float, fy: float) -> None:
         self.fx, self.fy = fx, fy
         self._clamp()
+
+    def limit_to(self, img_w: int, cols: int, pixels_per_cell: float) -> None:
+        """Stop zooming once one source pixel fills one terminal pixel.
+
+        Call after set_fit. Further zoom would only enlarge pixels.
+        """
+        self.max_zoom = min(MAX_ZOOM, max(MIN_ZOOM, self.fx * img_w / (cols * pixels_per_cell)))
+        if self.zoom > self.max_zoom:
+            self.zoom_by(1.0)
 
     def extent(self) -> tuple[float, float]:
         """Visible window as a fraction of the image; may exceed 1 when letterboxed."""
@@ -30,7 +41,7 @@ class Viewport:
         self.zoom, self.cx, self.cy = 1.0, 0.5, 0.5
 
     def zoom_by(self, factor: float) -> None:
-        self.zoom = min(MAX_ZOOM, max(MIN_ZOOM, self.zoom * factor))
+        self.zoom = min(self.max_zoom, max(MIN_ZOOM, self.zoom * factor))
         self._clamp()
 
     def zoom_in(self) -> None:
