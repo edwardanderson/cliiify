@@ -5,6 +5,29 @@ from pathlib import Path
 from .net import urlopen
 
 
+def fetch_info(service: str) -> dict:
+    with urllib.request.urlopen(f"{service.rstrip('/')}/info.json", timeout=30) as resp:
+        return json.load(resp)
+
+
+def _profile_parts(info: dict) -> tuple[int | None, set[str], dict]:
+    """Return the compliance level, supported features and extra profile settings."""
+    profile = info.get('profile')
+    items = profile if isinstance(profile, list) else [profile]
+    level: int | None = None
+    features = set(info.get('extraFeatures', []))
+    extras: dict = {}
+    for item in items:
+        if isinstance(item, str):
+            match = re.search(r'level(\d)', item)
+            if match:
+                level = int(match.group(1))
+        elif isinstance(item, dict):
+            features.update(item.get('supports', []))
+            extras.update(item)
+    return level, features, extras
+
+
 @dataclass
 class Canvas:
     label: str
@@ -13,8 +36,18 @@ class Canvas:
     service: str | None = None
 
 
-# Width requested from IIIF Image API services (level 1 supports 'w,' sizes).
-IMAGE_WIDTH = 2000
+def _image_service(body: dict) -> str | None:
+    services = body.get('service') or body.get('@service') or []
+    if isinstance(services, dict):
+        services = [services]
+    for service in services:
+        if not isinstance(service, dict):
+            continue
+        kind = str(service.get('type') or service.get('@type') or '')
+        url = service.get('id') or service.get('@id')
+        if url and (not kind or kind.startswith('ImageService')):
+            return url
+    return None
 
 
 def _label(value, default: str) -> str:

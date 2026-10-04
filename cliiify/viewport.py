@@ -62,11 +62,29 @@ class Viewport:
         self.cx = 0.5 if ex >= 1 else min(1 - ex / 2, max(ex / 2, self.cx))
         self.cy = 0.5 if ey >= 1 else min(1 - ey / 2, max(ey / 2, self.cy))
 
-    def rect(self, img_w: int, img_h: int) -> tuple[int, int, int, int]:
-        """Return (x, y, w, h) of the visible part of the image in pixels."""
+    def frac_rect(self) -> tuple[float, float, float, float]:
+        """Visible part of the image as fractions: (x0, y0, x1, y1)."""
         ex, ey = self.extent()
-        w = max(1, round(img_w * min(1.0, ex)))
-        h = max(1, round(img_h * min(1.0, ey)))
-        x = min(img_w - w, max(0, round(self.cx * img_w - w / 2)))
-        y = min(img_h - h, max(0, round(self.cy * img_h - h / 2)))
+        fw, fh = min(1.0, ex), min(1.0, ey)
+        x0 = min(1 - fw, max(0.0, self.cx - fw / 2))
+        y0 = min(1 - fh, max(0.0, self.cy - fh / 2))
+        return x0, y0, x0 + fw, y0 + fh
+
+    def rect(
+        self,
+        img_w: int,
+        img_h: int,
+        region: tuple[float, float, float, float] = (0.0, 0.0, 1.0, 1.0),
+    ) -> tuple[int, int, int, int]:
+        """Return (x, y, w, h) of the visible part in pixels.
+
+        The image may cover only a region of the full image, given as fractions.
+        """
+        x0, y0, x1, y1 = self.frac_rect()
+        rx0, ry0, rx1, ry1 = region
+        sx, sy = img_w / (rx1 - rx0), img_h / (ry1 - ry0)
+        w = min(img_w, max(1, round((x1 - x0) * sx)))
+        h = min(img_h, max(1, round((y1 - y0) * sy)))
+        x = min(img_w - w, max(0, round((x0 - rx0) * sx)))
+        y = min(img_h - h, max(0, round((y0 - ry0) * sy)))
         return x, y, w, h

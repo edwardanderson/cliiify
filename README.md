@@ -9,7 +9,7 @@ Image: Rembrandt, H. van Rijn. (1642). _The Night Watch_ [Oil on canvas]. Rijksm
 ## Install
 
 ```bash
-git clone git@github.com:edwardanderson/cliiify.git
+git clone https://github.com/edwardanderson/cliiify.git
 uv tool install --editable cliiify/
 ```
 
@@ -43,10 +43,7 @@ cliiify image https://iiif.micr.io/PJEZO
 | Previous   | `p` or `PgUp`     |
 | Quit       | `q` or `Ctrl + c` |
 
-When an image has an IIIF Image API service, zooming in re-requests the visible
-region at higher resolution once the view settles (the status bar shows
-`refining…`, then `detail`). The request includes some extra surrounding image,
-so panning stays sharp while the next region is fetched.
+When an image has a IIIF Image API service, zooming in re-requests the visible region at higher resolution once the view settles (the status bar shows `refining…`, then `detail`). The request includes some extra surrounding image, so panning stays sharp while the next region is fetched.
 
 ## Test
 

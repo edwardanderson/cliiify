@@ -5,10 +5,12 @@ from cliiify.manifest import load_manifest
 from cliiify.viewport import MAX_ZOOM, Viewport
 
 
+# Manifest structure adapted from the IIIF Cookbook "Simplest Image" recipe
+# (https://iiif.io/api/cookbook/recipe/0001-mvm-image/), simplified.
 V3_MANIFEST = {
     "@context": "http://iiif.io/api/presentation/3/context.json",
     "type": "Manifest",
-    "label": {"en": ["Simplest Image Example"]},
+    "label": {"en": ["Test Manifest"]},
     "items": [
         {
             "type": "Canvas",
@@ -36,7 +38,7 @@ def test_manifest(tmp_path):
     path = tmp_path / "manifest.json"
     path.write_text(json.dumps(V3_MANIFEST))
     title, canvases = load_manifest(str(path))
-    assert title.startswith("Simplest Image")
+    assert title == "Test Manifest"
     assert len(canvases) == 1
     assert canvases[0].image_url.endswith("page1-full.png")
 
@@ -110,7 +112,7 @@ def test_v2_manifest():
     )
     assert title == 'T'
     assert canvases[0].label == 'fol. 1r'
-    assert canvases[0].image_url == 'http://h/img/1/full/2000,/0/default.jpg'
+    assert canvases[0].url_for(900) == 'http://h/img/1/full/900,/0/default.jpg'
 
 
 def test_image_service_base_url():

@@ -8,6 +8,7 @@ import termios
 import time
 import tty
 from concurrent.futures import Future, ThreadPoolExecutor
+from dataclasses import dataclass
 
 from chafa.loader import Loader
 
@@ -59,6 +60,28 @@ for keys, action in [
         KEYMAP[key] = action
 
 
+Region = tuple[float, float, float, float]
+
+
+@dataclass
+class Detail:
+    """A sharper image of part of a canvas."""
+
+    index: int
+    region: Region
+    loader: Loader
+
+    def covers(self, rect: Region) -> bool:
+        eps = 1e-6
+        r = self.region
+        return (
+            r[0] <= rect[0] + eps
+            and r[1] <= rect[1] + eps
+            and r[2] >= rect[2] - eps
+            and r[3] >= rect[3] - eps
+        )
+
+
 class Viewer:
     def __init__(self, title: str, canvases: list[Canvas]):
         self.title = title
@@ -84,6 +107,11 @@ class Viewer:
         self.resized = True
         self.dirty = True
         self.shown_ready = False
+        self.detail_pool = ThreadPoolExecutor(max_workers=1)
+        self.detail: Detail | None = None
+        self.detail_future: Future | None = None
+        self.detail_request: tuple[int, Region] | None = None
+        self.detail_due: float | None = None
 
     def future(self, index: int) -> Future:
         if index not in self.futures:
@@ -181,6 +209,9 @@ class Viewer:
             self.index = new
             self.tile = self.pending = None
             self.view.reset()
+            self.detail = None
+            if self.detail_future:
+                self.detail_future.cancel()
             self.shown_ready = False
             self.resized = True
 
@@ -278,11 +309,13 @@ class Viewer:
                 if ready:
                     # Read everything queued so held keys cost one render.
                     self.handle(os.read(fd, 4096))
+                self.poll_detail()
         finally:
             termios.tcsetattr(fd, termios.TCSADRAIN, saved)
             sys.stdout.write(LEAVE_ALT)
             sys.stdout.flush()
             self.pool.shutdown(wait=False, cancel_futures=True)
+            self.detail_pool.shutdown(wait=False, cancel_futures=True)
 
 
 def run(title: str, canvases: list[Canvas]) -> None:

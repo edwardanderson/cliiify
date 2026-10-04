@@ -52,7 +52,9 @@ def render(
 ) -> tuple[list[str], int, int]:
     """Render the view into a width x height cell area.
 
-    cell_ratio is a terminal cell's width divided by its height.
+    cell_ratio is a terminal cell's width divided by its height. If the loader
+    holds only a region of the full image (fractions), pass it as region along
+    with the full image's aspect ratio.
 
     Returns (lines, left, top): the image fills the area except where the
     visible window is larger than the image, in which case it is centred.
