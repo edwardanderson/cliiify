@@ -4,7 +4,7 @@ View IIIF manifests and images in the terminal.
 
 ![The Night Watch (1642)](demo.gif)
 
-Image: Rembrandt, H. van Rijn. (1642). _The Night Watch_ [Oil on canvas]. Rijksmuseum Amsterdam, Netherlands. <https://www.rijksmuseum.nl/nl/collectie/object/De-Nachtwacht--3137deb45cd7765f9a76084a16c99544>.
+Image: Rembrandt van Rijn. _The Night Watch_. 1642. Oil on canvas. Rijksmuseum, Amsterdam. <https://www.rijksmuseum.nl/nl/collectie/object/De-Nachtwacht--3137deb45cd7765f9a76084a16c99544>
 
 ## Install
 
@@ -42,8 +42,6 @@ cliiify image https://iiif.micr.io/PJEZO
 | Next       | `n` or `PgDn`     |
 | Previous   | `p` or `PgUp`     |
 | Quit       | `q` or `Ctrl + c` |
-
-When an image has a IIIF Image API service, zooming in re-requests the visible region at higher resolution once the view settles (the status bar shows `refining…`, then `detail`). The request includes some extra surrounding image, so panning stays sharp while the next region is fetched.
 
 ## Test
 
